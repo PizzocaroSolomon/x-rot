@@ -1,0 +1,84 @@
+<launch>
+        <!-- -->
+        <arg name="output" />
+        <arg name="record_log" default="false" />
+    	<arg name="test_name" default="" />  
+
+        <!-- -->
+        <node respawn="true" pkg="xrot_pre_proces" type="xrot_pre_proces" name="xrot_pre_proces" output="log">
+
+                <param name="refresh_rate" value="10" />
+
+                <param name="ROI_box_x" value="8" />
+                <param name="ROI_box_x_back" value="2" />
+                <param name="ROI_box_y" value="4" />
+                <param name="ROI_box_y_inside" value="3" />
+                <!-- <param name="ROI_box_z" value="10" /> -->
+                <param name="vox_leaf" value="0.08" />
+
+                <param name="vox_filt" value="true"/>
+                <param name="pass_filt" value="true"/>
+                <param name="record_log" value="false"/>
+                <param name="pcl_save_period" value="0"/>
+                <param name="clean_cloud_period" value="1"/>
+
+                <param name="normal_k_search" value="30"/>
+                <param name="ground_cluster_normal_th" value="0.05"/>
+                <param name="euclidian_cluster_tollerance" value="2"/>	
+                <param name="euclidian_cluster_min_size" value="1"/>		
+                <param name="euclidian_cluster_max_size" value="1000"/>
+
+                <param name="ransac_ground_distance_th" value="0.2"/>
+                <param name="ransac_ground_angle_th" value="10"/>
+                <param name="ransac_ground_cut_z_th" value="0"/>
+
+                <param name="filter_cloud_divide_min_y" value="0.1"/>
+                <param name="filter_cloud_divide_max_y" value="3"/>
+
+                <param name="ransac_row_distance_th" value="0.2"/>
+                <param name="ransac_row_angle_th" value="10"/>
+                <param name="ransac_row_angle_th_inside" value="10"/>
+                <param name="ransac_max_iterations" value="30"/>
+
+                <param name="line_step" value="0.1"/>
+                <param name="line_inliers_dist_th" value="0.3"/>
+
+                <param name="prev_gain" value="0.85"/>
+                <param name="pub_clean_cloud" value="true"/>
+                
+                <param name="in_home_height" value="1.7" />
+                <param name="out_row_height" value="2"/>
+
+                <param name="second_layer_dz" value="0.2"/>
+                <param name="third_layer_dz" value="0.6"/>
+
+                <param name="dist_from_path_th" value="2.2"/>
+                <param name="row_width_limit" value="2"/>
+
+                <param name="euclidian_cluster_tollerance_insiderow" value="0.7"/>
+                <param name="euclidian_cluster_min_size_insiderow" value="100"/>
+                <param name="euclidian_cluster_max_size_insiderow" value="8000"/>
+
+                <param name="ransac_min_dist" value="2"/> 
+                <param name="ransac_check_prev_plane" value="false"/>
+
+                <param name="region_limit_x" value="2.5"/> 
+                <param name="region_limit_y" value="2"/> 
+                <param name="region_limit_x_offset" value="0.3"/> 
+                <param name="region_limit_x_shift" value="0.3"/> 
+                <param name="region_limit_y_offset" value="0.5"/> 
+                <param name="region_discretization_N" value="6"/> 
+
+                <param name="use_lines" value="true"/>
+                <param name="use_fitline" value="false"/>
+
+                <param name="use_cut_row" value="true"/>
+                <param name="use_cluster_row" value="false"/>
+                <param name="use_path_orientation" value="false"/>
+
+                <param name="inside_row_length_th" value="5"/> 
+                <param name="outside_row_length_th" value="3"/> 
+                <param name="use_inliers_th" value="2"/> 
+        </node> 
+
+</launch>
