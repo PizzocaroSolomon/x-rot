@@ -29,7 +29,7 @@ namespace xrot_pre_proces
         private_nh.param<double>("euclidian_cluster_min_size_insiderow", euclidian_cluster_min_size_insiderow, 200);
         private_nh.param<double>("euclidian_cluster_max_size_insiderow", euclidian_cluster_max_size_insiderow, 2000);
 
-		private_nh.param<int>("normal_k_search", normal_k_search, 100);
+		private_nh.param<double>("k_search_th", k_search_th, 0.05);
 
 		private_nh.param<double>("ransac_ground_distance_th", ransac_ground_distance_th, 0.35);
 		private_nh.param<double>("ransac_ground_angle_th", ransac_ground_angle_th, 20);
@@ -81,8 +81,9 @@ namespace xrot_pre_proces
         private_nh.param<bool>("use_cut_row",use_cut_row,false);
         private_nh.param<bool>("use_cluster_row",use_cluster_row,false);
         private_nh.param<bool>("use_path_orientation",use_path_orientation,false);
+        private_nh.param<bool>("use_zed_pointcloud", use_zed_pointcloud,false);
 
-	private_nh.param<double>("prev_gain", prev_gain_memory,0.8);
+	    private_nh.param<double>("prev_gain", prev_gain_memory,0.8);
 
     }
     /****************************************************************
@@ -97,9 +98,21 @@ namespace xrot_pre_proces
     void xrot_pre_proces::init()
     {
     	//subscribers
-    	sub_cloudPoints = nh_.subscribe<sensor_msgs::PointCloud2>("/point_raw" ,1 , &xrot_pre_proces::callback_cloudPoints, this);
+        cout<<"tyh "<<use_zed_pointcloud<<endl;
+        if(use_zed_pointcloud)
+        {
+            cloud_frame_id = "zed2_left_camera_frame";
+            sub_cloudPoints = nh_.subscribe<sensor_msgs::PointCloud2>("/zed2/zed_node/point_cloud/cloud_registered" ,1 , &xrot_pre_proces::callback_cloudPoints, this);
+        }
+        else
+        {
+            cloud_frame_id = "lidar";
+    	    sub_cloudPoints = nh_.subscribe<sensor_msgs::PointCloud2>("/point_raw" ,1 , &xrot_pre_proces::callback_cloudPoints, this);
+        }
     	//publishers
-    	pub_GroundRemoved = nh_.advertise<sensor_msgs::PointCloud2> ("/cloud_no_ground", 1);
+    	pub_BackGroundRemoved = nh_.advertise<sensor_msgs::PointCloud2> ("/cloud_no_background", 1);
+        pub_GroundRemoved = nh_.advertise<sensor_msgs::PointCloud2> ("/cloud_no_ground", 1);
+        pub_CleanCloud = nh_.advertise<sensor_msgs::PointCloud2> ("/cloud", 1);
 
         if(record_log)
         {
@@ -150,29 +163,132 @@ namespace xrot_pre_proces
         got_row_enter = false;
 
         environment_state = 0;
-        inside_row_counter_time = ros::Time::now().toSec();
+        while(ros::Time::now().toSec()==0)
+            prev_time = ros::Time::now().toSec();
 
+    }
+
+    void xrot_pre_proces::initialProcessing(pointCloud::Ptr cloud_in)
+    {
+    	pcl::PassThrough<pointType> pass (true);
+		pcl::VoxelGrid<pointType> vox;
+
+		if(pass_filt)
+		{
+            pointCloud::Ptr cloud_inside_x(new pointCloud), cloud_outside_x(new pointCloud);
+            if(!InsideRow)
+                ROI_box_y = ROI_box_y_outside;
+            else
+                ROI_box_y = ROI_box_y_inside;
+
+			pass.setInputCloud(cloud_in);
+			pass.setFilterFieldName("x");
+			pass.setFilterLimits ( -ROI_box_x_back , ROI_box_x);
+			pass.filter(*cloud_in);
+
+			pass.setInputCloud(cloud_in);
+			pass.setFilterFieldName("y");
+			pass.setFilterLimits ( -ROI_box_y , ROI_box_y);
+			pass.filter(*cloud_in);
+
+            // remove point inside footprint robot
+            pass.setInputCloud(cloud_in);
+            pass.setFilterFieldName("x");
+            pass.setFilterLimits(-1, 1);
+            pass.filter(*cloud_inside_x);
+            pass.setFilterLimitsNegative(true);
+            pass.filter(*cloud_outside_x);
+            pass.setInputCloud(cloud_inside_x);
+            pass.setFilterFieldName("y");
+            pass.setFilterLimits(-0.6, 0.6);
+            pass.setFilterLimitsNegative(true);
+            pass.filter(*cloud_in);
+
+            *cloud_in += *cloud_outside_x;
+
+		}
+
+		if(vox_filt)
+		{
+			pointCloud::Ptr vox_cloud(new pointCloud);
+			vox.setInputCloud (cloud_in);
+			vox.setLeafSize ((float)vox_leaf, (float)vox_leaf, (float)vox_leaf);
+			vox.filter (*vox_cloud);
+
+			*cloud_in = *vox_cloud;
+
+		}
     }
 
     void xrot_pre_proces::callback_cloudPoints(const sensor_msgs::PointCloud2 current_cloud2)
     {
+        double curr_time = ros::Time::now().toSec();
+
     	// transform to base_footprint frame
-    	pointCloud::Ptr cloud_in(new pointCloud);
+    	pointCloud::Ptr cloud_init(new pointCloud);
+        pointCloud::Ptr cloud_in(new pointCloud);
         pointCloud::Ptr cloud_no_ground(new pointCloud);
 
     	sensor_msgs::PointCloud2 cloud2_in;
         sensor_msgs::PointCloud2 cloud2_no_ground;
 
         pcl::fromROSMsg(current_cloud2,*cloud_in);
-
-        removeGround(cloud_in,cloud_no_ground);
         
-		pcl::toROSMsg(*cloud_no_ground,cloud2_no_ground);
-        cloud2_no_ground.header.frame_id = "lidar";
+        pcl::toROSMsg(*cloud_in,cloud2_no_ground);
+        cloud2_no_ground.header.frame_id = cloud_frame_id;
+    	cloud2_no_ground.header.stamp = ros::Time::now();
+    	pub_CleanCloud.publish(cloud2_no_ground);
+
+        initialProcessing(cloud_in);
+        removeGround(cloud_in,cloud_no_ground);
+
+        pcl::toROSMsg(*cloud_no_ground,cloud2_no_ground);
+        cloud2_no_ground.header.frame_id = cloud_frame_id;
     	cloud2_no_ground.header.stamp = ros::Time::now();
     	pub_GroundRemoved.publish(cloud2_no_ground);
+        
+        if(( curr_time - prev_time)<5)
+        {
+            initial_cloud+=*cloud_no_ground;
+        }
 
+        *cloud_init = initial_cloud;
+        removeBackGround(cloud_no_ground,cloud_init);
+        // *cloud_no_ground-=initial_cloud;
 
+        pcl::toROSMsg(*cloud_no_ground,cloud2_no_ground);
+        cloud2_no_ground.header.frame_id = cloud_frame_id;
+    	cloud2_no_ground.header.stamp = ros::Time::now();
+    	pub_BackGroundRemoved.publish(cloud2_no_ground);
+
+    }
+
+    void xrot_pre_proces::removeBackGround(pointCloud::Ptr cloud_in, pointCloud::Ptr cloud_back_ground)
+    {
+        // search inliers within radius
+        pcl::KdTreeFLANN<pointType> kdtree;
+        kdtree.setInputCloud (cloud_back_ground);
+        pointType minPt, maxPt,Pt;
+
+        std::vector<int> pointIdxRadiusSearch;
+        std::vector<float> pointRadiusSquaredDistance;
+        pcl::ExtractIndices<pointType> extract (true);
+        pcl::PointIndices::Ptr inliers (new pcl::PointIndices);
+
+        for(float i = 0 ; i< cloud_in->points.size() ; i+= 1){
+
+            Pt = cloud_in->points[i];
+
+            if ( kdtree.radiusSearch (Pt, k_search_th , pointIdxRadiusSearch, pointRadiusSquaredDistance) > 0 ){
+                inliers->indices.push_back(i);
+            }
+        }
+
+        extract.setInputCloud (cloud_in);
+        extract.setIndices (inliers);
+        extract.setNegative (true);
+        extract.filter(*cloud_in);
+            
     }
 
     void xrot_pre_proces::removeGround(pointCloud::Ptr cloud_in,pointCloud::Ptr cloud_no_ground)
@@ -230,7 +346,6 @@ int main (int argc, char** argv)
     
     while(ros::ok() )
     {
-        xrot_pre_proces_handler.prev_time = ros::Time::now().toSec();
         ros::spinOnce();
 //        ROS_INFO("row filter : total computation time %f ", ros::Time::now().toSec()-xrot_pre_proces_handler.prev_time );
         loop_rate.sleep();

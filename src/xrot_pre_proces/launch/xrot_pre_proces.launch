@@ -5,16 +5,16 @@
     	<arg name="test_name" default="" />  
 
         <!-- -->
-        <node respawn="true" pkg="xrot_pre_proces" type="xrot_pre_proces" name="xrot_pre_proces" output="log">
+        <node respawn="true" pkg="xrot_pre_proces" type="xrot_pre_proces" name="xrot_pre_proces" output="screen">
 
                 <param name="refresh_rate" value="10" />
 
-                <param name="ROI_box_x" value="8" />
-                <param name="ROI_box_x_back" value="2" />
-                <param name="ROI_box_y" value="4" />
-                <param name="ROI_box_y_inside" value="3" />
+                <param name="ROI_box_x" value="14" />
+                <param name="ROI_box_x_back" value="14" />
+                <param name="ROI_box_y" value="14" />
+                <param name="ROI_box_y_inside" value="14" />
                 <!-- <param name="ROI_box_z" value="10" /> -->
-                <param name="vox_leaf" value="0.08" />
+                <param name="vox_leaf" value="0.1" />
 
                 <param name="vox_filt" value="true"/>
                 <param name="pass_filt" value="true"/>
@@ -22,8 +22,9 @@
                 <param name="pcl_save_period" value="0"/>
                 <param name="clean_cloud_period" value="1"/>
 
-                <param name="normal_k_search" value="30"/>
-                <param name="ground_cluster_normal_th" value="0.05"/>
+                <param name="k_search_th" value="0.1"/>
+
+                <param name="ground_cluster_normal_th" value="0.1"/>
                 <param name="euclidian_cluster_tollerance" value="2"/>	
                 <param name="euclidian_cluster_min_size" value="1"/>		
                 <param name="euclidian_cluster_max_size" value="1000"/>
@@ -75,6 +76,7 @@
                 <param name="use_cut_row" value="true"/>
                 <param name="use_cluster_row" value="false"/>
                 <param name="use_path_orientation" value="false"/>
+                <param name="use_zed_pointcloud" value="false"/>
 
                 <param name="inside_row_length_th" value="5"/> 
                 <param name="outside_row_length_th" value="3"/> 

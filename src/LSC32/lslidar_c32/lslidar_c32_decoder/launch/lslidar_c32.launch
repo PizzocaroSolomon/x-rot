@@ -1,0 +1,28 @@
+<launch>
+
+  <node pkg="lslidar_c32_driver" type="lslidar_c32_driver_node" name="leishen_lslidar_c32_driver" output="log" >
+    <param name="frame_id" value="laser_link"/>
+    <param name="device_ip" value="192.168.1.200"/>
+    <param name="device_port" value="2368"/>
+  </node>
+
+  <node pkg="lslidar_c32_decoder" type="lslidar_c32_decoder_node" name="leishen_lslidar_c32_decoder" output="log">
+    <param name="fixed_frame_id" value="world"/>
+    <param name="child_frame_id" value="LSC_32"/>
+    <param name="point_num" value="2000"/>
+    <param name="channel_num" value="0"/>
+    <param name="angle_disable_min" value="-1"/>
+    <param name="angle_disable_max" value="-1"/>
+    <param name="min_range" value="0.15"/>
+    <param name="max_range" value="500.0"/>
+    <param name="frequency" value="20.0"/>
+    <param name="publish_point_cloud" value="true"/>
+    <param name="publish_channels" value="false"/>
+    <remap from="lslidar_point_cloud" to="/point_raw" />
+  </node>
+
+  <node pkg="tf2_ros" type="static_transform_publisher" name="LSC32_tf_broadcaster" args="0 0 0 0 0 0 1 world LSC_32" />
+  
+  <!--node name="rviz" pkg="rviz" type="rviz" args="-d $(find lslidar_c32_decoder)/launch/lslidar_c32.rviz" output="screen"/-->
+
+</launch>

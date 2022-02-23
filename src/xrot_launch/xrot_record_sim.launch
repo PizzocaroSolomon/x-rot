@@ -4,6 +4,7 @@
 	<node pkg="rosbag" type="record" name="rosbag_recorder" args="-o /home/solomon/bags/$(arg filename) 
 /clock
 /cloud_no_ground
+/cloud_no_background
 /max_botix1_range
 /max_botix2_range
 /move_base_simple/goal

@@ -73,6 +73,7 @@ namespace xrot_pre_proces
             sub_PathAngle;
 
         ros::Publisher  pub_GroundRemoved,
+                        pub_BackGroundRemoved,
                         pub_RowCloud,
                         pub_CleanCloud,
 						pub_CloudTemp1,
@@ -209,8 +210,10 @@ namespace xrot_pre_proces
         unsigned int environment_state;
         std_msgs::Bool inside_row; 
 
-        pointCloud pcl_to_save_left,pcl_to_save_right;
-        double left_cluster_length, right_cluster_length,inside_row_length_th, outside_row_length_th, use_inliers_th,prev_gain_memory;
+        pointCloud pcl_to_save_left,pcl_to_save_right,initial_cloud;
+        double left_cluster_length, right_cluster_length,inside_row_length_th, outside_row_length_th, use_inliers_th,prev_gain_memory,k_search_th;
+        bool use_zed_pointcloud;
+        string cloud_frame_id;
 
         void init();
         void callback_cloudPoints(const sensor_msgs::PointCloud2 current_cloud2);
@@ -248,6 +251,8 @@ namespace xrot_pre_proces
         void updateInsideRows(pointCloud::Ptr cloud);
         double get_cloud_length(pointCloud::Ptr cloud_in);
 
+        void removeBackGround(pointCloud::Ptr cloud_in, pointCloud::Ptr cloud_no_back_ground);
+        
         ros::Timer timer_pcl_save,timer_clean_cloud;
     };
 }

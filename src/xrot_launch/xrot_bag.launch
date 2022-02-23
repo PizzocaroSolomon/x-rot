@@ -42,7 +42,7 @@
     </node>
 
     <!-- RECORD -->
-	<!-- <include file="$(find xrot_launch)/xrot_record_sim.launch"> 
-	</include>   -->
+    <!-- <include file="$(find xrot_launch)/xrot_record_sim.launch"> 
+    </include>   -->
 
 </launch>
